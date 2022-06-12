@@ -1,0 +1,20 @@
+name: positions-service
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Core
+  - python=3.8
+  - pip
+  - numpy
+  - pandas
+  - uvicorn
+  - fastapi
+  - pydantic
+  # Plotting
+  - matplotlib
+  - plotly
+  - seaborn
+  # Database
+  - pymongo
+  - motor
