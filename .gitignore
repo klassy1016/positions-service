@@ -1,0 +1,3 @@
+docker-test.pem
+scratch/
+app/__pycache__
