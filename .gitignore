@@ -1,3 +1,8 @@
 docker-test.pem
 scratch/
-app/__pycache__
+.idea/
+app/api/__pycache__/
+app/__pycache__/
+app/api/v1/__pycache__/
+app/api/v1/endpoints/__pycache__/
+app/models/__pycache__/
