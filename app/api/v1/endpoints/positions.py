@@ -1,21 +1,22 @@
-from fastapi import APIRouter, Body, Depends, Path, Query
-from app.models.position import Position, MultiPositionModel, CreatedPosition
-from app.db.mongodb import AsyncIOMotorClient, get_database
-from app.crud.positions import add_trade_to_db, get_all_positions
-from app.core.utils import create_aliased_response
+from fastapi import APIRouter
+from app.models.position import PositionList
+from app.crud.positions import get_db_positions
 
 
-
-router = APIRouter()
-
-@router.post("/add_trade")
-async def add_trade(trade: Position,
-                    db: AsyncIOMotorClient = Depends(get_database)):
-    added_trade = await add_trade_to_db(db, trade)
-    return create_aliased_response(CreatedPosition(position=added_trade))
+position_router = APIRouter(prefix='/positions')
 
 
-@router.get("/positions", response_model=Position, tags=["articles"])
-async def get_positions(db: AsyncIOMotorClient = Depends(get_database)):
-    positions = await get_all_positions(db)
-    return create_aliased_response(MultiPositionModel(positions=positions))
+def query_positions(query={}):
+    positions_list = get_db_positions(query=query)
+    return PositionList(positions=positions_list)
+
+
+@position_router.get("/active_positions", response_model=PositionList, tags=["active_positions"])
+def active_positions():
+    active_query = {'active': True}
+    return query_positions(query=active_query)
+
+@position_router.get("/positions", response_model=PositionList, tags=["positions"])
+def positions():
+    return query_positions()
+
