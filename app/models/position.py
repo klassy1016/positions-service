@@ -1,24 +1,56 @@
+from datetime import datetime, date
+from pydantic import BaseModel
 from typing import List, Optional
-from app.models.dbmodel import DateTimeModelMixin, DBModelMixin
 
-from pydantic import BaseConfig, BaseModel
 
 class Position(BaseModel):
     id: str = ""
     trader: str = ""
-    quantity: float = 0.0
     broker: str = ""
+    exchange: str = ""
+    pfo: str = ""
     strategy: str = ""
-    portfolio: str = ""
     asset_type: str = ""
-    entry_date: str = ""
-    exit_date: str = None
+    quantity: float = 0.0
+    cost_basis: float = 0.0
+    outstanding_fees: float = 0.0  # Fees incurred at entry that haven't yet been realized on pnl
+    entry_date: date = date.today()
+    exit_date: Optional[date] = None
+    pricing_source: str = "eod_historical"
+    last_trade_time: datetime = datetime.now()
+    active: bool = True
 
-class MultiPositionModel(BaseModel):
-    positions: List[Position]
 
-class PositionsInDB(DBModelMixin, MultiPositionModel):
-    pass
+class PositionList(BaseModel):
+    positions: List[Position] = []
 
-class CreatedPosition(BaseModel):
+
+class Trade(BaseModel):
     position: Position
+    trade_time: datetime = datetime.now()
+
+
+class LoggedTrade(BaseModel):
+    trade: Trade
+    status: str = ""
+
+
+class TradeLog(BaseModel):
+    trades: List[Trade]
+
+
+class Pnl(BaseModel):
+    pnl: float = 0.0
+    pnl_type: str = 'dollar'
+    trade: Trade
+
+class AggregatedPnl(BaseModel):
+    pnl: float = 0.0,
+    pnl_type: str = 'dollar'
+    filtered_by: dict = {}
+
+
+class PnlLog(BaseModel):
+    pnl_log: List[Pnl]
+
+
