@@ -16,5 +16,6 @@ dependencies:
   - plotly
   - seaborn
   # Database
+  - dnspython
   - pymongo
   - motor
