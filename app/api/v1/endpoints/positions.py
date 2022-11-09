@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from app.models.position import PositionList
 from app.crud.positions import get_db_positions
 
@@ -20,3 +20,8 @@ def active_positions():
 def positions():
     return query_positions()
 
+
+@position_router.get("/positions_by_filter", response_model=PositionList, tags=["positions_by_filter"])
+def positions_by_filter(req: Request):
+    filter_args = dict(req.query_params)
+    return query_positions(query=filter_args)
