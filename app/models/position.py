@@ -9,6 +9,7 @@ class Position(BaseModel):
     broker: str = ""
     exchange: str = ""
     pfo: str = ""
+    pfo_group: str = ""
     strategy: str = ""
     asset_type: str = ""
     quantity: float = 0.0
