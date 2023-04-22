@@ -91,7 +91,10 @@ def log_pnl(trade: Trade, pnl: float, ):
 
 
 def close_position(trade: Trade):
-    mongo_db.delete(collection=raw_positions_collection_name, query=build_position_query(trade.position))
+    mongo_db.delete(collection_name=raw_positions_collection_name, query=build_position_query(trade.position))
+
+# def delete_all():
+#     mongo_db.delete(collection_name=raw_positions_collection_name, query={})
 
 
 def calculate_new_cost_basis_quantity(trade: Trade, position: Position):

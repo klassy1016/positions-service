@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 from app.models.position import PositionList
-from app.crud.positions import get_db_positions
+from app.crud.positions import get_db_positions #, delete_all
 
 
 position_router = APIRouter(prefix='/positions')
@@ -25,3 +25,7 @@ def positions():
 def positions_by_filter(req: Request):
     filter_args = dict(req.query_params)
     return query_positions(query=filter_args)
+
+# @position_router.get("/delete_all_positions", response_model=PositionList, tags=["active_positions"])
+# def delete_all_positions():
+#     delete_all()
