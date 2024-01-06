@@ -45,6 +45,10 @@ class Pnl(BaseModel):
     pnl_type: str = 'dollar'
     trade: Trade
 
+class ExitDateStrategy(BaseModel):
+    exit_date: date = None
+    stategy_name: str = ''
+
 class AggregatedPnl(BaseModel):
     pnl: float = 0.0,
     pnl_type: str = 'dollar'
@@ -53,5 +57,9 @@ class AggregatedPnl(BaseModel):
 
 class PnlLog(BaseModel):
     pnl_log: List[Pnl]
+
+class StrategyPnl(BaseModel):
+    strategy_id: str = ""
+    pnl: float = 0.0
 
 

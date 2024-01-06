@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Request
-from app.models.position import PositionList
-from app.crud.positions import get_db_positions #, delete_all
+from fastapi import APIRouter, Request, Body
+from app.models.position import PositionList, ExitDateStrategy
+from app.crud.positions import get_db_positions, delete_all
+from typing import Any, Dict
 
 
 position_router = APIRouter(prefix='/positions')
@@ -26,6 +27,15 @@ def positions_by_filter(req: Request):
     filter_args = dict(req.query_params)
     return query_positions(query=filter_args)
 
-# @position_router.get("/delete_all_positions", response_model=PositionList, tags=["active_positions"])
-# def delete_all_positions():
-#     delete_all()
+@position_router.get("/positions_to_exit", response_model=PositionList, tags=["positions_by_filter"])
+def positions_to_exit(req: Request):
+    filter_args = dict(req.query_params)
+    dt = filter_args['exit_date']
+    strat = filter_args['strategy']
+    query = {"exit_date": {"$lte": dt}, "strategy": strat}
+    return query_positions(query=query)
+
+@position_router.get("/delete_all_positions", response_model=PositionList, tags=["active_positions"])
+def delete_all_positions():
+    delete_all()
+    return PositionList()

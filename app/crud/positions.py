@@ -8,10 +8,12 @@ from app.models.position import (
     Pnl,
     Position,
     Trade,
-    PnlLog
+    PnlLog,
+    StrategyPnl
 )
 from app.db import mongo_db
-from app.core.config import raw_positions_collection_name, trade_collection_name, pnl_collection_name
+from app.core.config import raw_positions_collection_name, trade_collection_name, pnl_collection_name,\
+    strategy_pnl_collection_name
 
 
 def build_position_query(position: Position):
@@ -36,6 +38,7 @@ def log_trade(trade: Trade) -> LoggedTrade:
         pnl = update_position(trade, position)
         # Log realized pnl from trade
         if pnl:
+            update_strat_pnl(trade.position.strategy, pnl)
             log_pnl(trade, pnl)
         added_trade, status = add_trade_to_db(trade)
         return LoggedTrade(trade=added_trade, status=status)
@@ -89,12 +92,35 @@ def log_pnl(trade: Trade, pnl: float, ):
     mongo_db.insert(collection_name=pnl_collection_name, data=jsonable_encoder(pnl_model))
     return
 
+def update_strat_pnl(strategy_id: str, pnl: float):
+    prexisting_strat_pnl = mongo_db.query(collection_name=strategy_pnl_collection_name, query={'strategy_id': strategy_id})
+    if prexisting_strat_pnl:
+        pnl += prexisting_strat_pnl[0]['pnl']
+        pnl_update = {
+            "$set": {'pnl': pnl}
+        }
+
+        mongo_db.update(collection_name=strategy_pnl_collection_name,
+                        query={'strategy_id': strategy_id},
+                        update_fields=pnl_update)
+    else:
+        strat_pnl = StrategyPnl(strategy_id=strategy_id, pnl=pnl)
+        mongo_db.insert(collection_name=strategy_pnl_collection_name, data=jsonable_encoder(strat_pnl))
+
+def get_strat_pnl(strategy_id: str):
+    preexisting_strat_pnl = mongo_db.query(collection_name=strategy_pnl_collection_name,
+                                          query={'strategy_id': strategy_id})
+    if preexisting_strat_pnl:
+        return preexisting_strat_pnl[0]['pnl']
+    return 0.0
 
 def close_position(trade: Trade):
     mongo_db.delete(collection_name=raw_positions_collection_name, query=build_position_query(trade.position))
 
-# def delete_all():
-#     mongo_db.delete(collection_name=raw_positions_collection_name, query={})
+def delete_all():
+    mongo_db.delete(collection_name=pnl_collection_name, query={})
+    mongo_db.delete(collection_name=raw_positions_collection_name, query={})
+    mongo_db.delete(collection_name=strategy_pnl_collection_name, query={})
 
 
 def calculate_new_cost_basis_quantity(trade: Trade, position: Position):
@@ -107,7 +133,7 @@ def calculate_new_cost_basis_quantity(trade: Trade, position: Position):
         if trade_quantity < 0: # Selling off
             trade_quantity = math.fabs(trade_quantity) # convert quantity into a positive number
             if new_quantity == 0:
-                pnl = trade_cost_basis - original_cost_basis
+                pnl = trade_quantity * (trade_cost_basis - original_cost_basis)
                 return pnl, 0, new_quantity
             else:
                 pnl = trade_quantity * (trade_cost_basis - original_cost_basis)
@@ -120,7 +146,7 @@ def calculate_new_cost_basis_quantity(trade: Trade, position: Position):
     if original_quantity < 0:  # Currently short
         if trade_quantity < 0:  # Shorting More
             if new_quantity == 0:
-                pnl = original_cost_basis - trade_cost_basis
+                pnl = trade_quantity * (original_cost_basis - trade_cost_basis)
                 return pnl, 0, new_quantity
             else:
                 pnl = trade_quantity * (original_cost_basis - trade_cost_basis)
@@ -128,7 +154,7 @@ def calculate_new_cost_basis_quantity(trade: Trade, position: Position):
                 return pnl, new_cost_basis, new_quantity
         else:  # Buying out
             if new_quantity == 0:
-                pnl = original_cost_basis - trade_cost_basis
+                pnl = trade_quantity * (original_cost_basis - trade_cost_basis)
                 return pnl, 0, new_quantity
             else:
                 new_cost_basis = ((trade_cost_basis * trade_quantity) + (original_cost_basis * original_quantity)) /\
@@ -147,8 +173,7 @@ def update_position(trade: Trade, position: Position):
         "$set": {'quantity': new_quantity,
                  'cost_basis': new_basis,
                  'active': bool(new_quantity != 0),
-                 'last_trade_time': datetime.now(),
-                 'exit_date': (datetime.today() if new_quantity == 0 else None)}
+                 'last_trade_time': datetime.now()}
     }
 
     mongo_db.update(collection_name=raw_positions_collection_name,

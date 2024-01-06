@@ -14,3 +14,4 @@ database_name = 'portfolio_mgmt'
 pnl_collection_name = 'realized_pnl'
 raw_positions_collection_name = 'positions'
 trade_collection_name = 'trades'
+strategy_pnl_collection_name = "strategy_pnl"
